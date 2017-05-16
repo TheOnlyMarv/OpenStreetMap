@@ -1,6 +1,7 @@
 ﻿using OsmSharp.Streams;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace OpenStreetMap
@@ -23,7 +24,7 @@ namespace OpenStreetMap
                 Console.Write("Parsing File... ");
                 ParseFile(source);
                 Console.WriteLine("COMPLETE");
-            }   
+            }
         }
 
         public static Map MapLoader(string path)
@@ -41,9 +42,13 @@ namespace OpenStreetMap
                     Node node = new Node((OsmSharp.Node)element);
                     this.Nodes.Add(node.Id, node);
                 }
-                else if(element.Type == OsmSharp.OsmGeoType.Way)
+                else if (element.Type == OsmSharp.OsmGeoType.Way)
                 {
-                    AddEdges(CreateEdgesFromWay((OsmSharp.Way)element));
+                    string temp;
+                    if (element.Tags != null && element.Tags.TryGetValue("highway", out temp))
+                    {
+                        AddEdges(CreateEdgesFromWay((OsmSharp.Way)element));
+                    }
                 }
             }
         }
@@ -77,6 +82,40 @@ namespace OpenStreetMap
                 this.Edges.Add(edge.Id, edge);
             }
         }
+
+        public void ExportToGraphiv(string path, int scaleMultiplier, string coordinatesPresentionFormat)
+        {
+            FileInfo fi = new FileInfo(path);
+            using (var stream = new StreamWriter(fi.Create()))
+            {
+                stream.WriteLine("graph{");
+                ExportNodesToGraphiv(stream, scaleMultiplier, coordinatesPresentionFormat);
+                ExportEdgesToGraphiv(stream);
+                stream.WriteLine("}");
+            }
+        }
+
+        private void ExportEdgesToGraphiv(StreamWriter stream)
+        {
+            foreach (var edge in this.Edges)
+            {
+                string output = string.Format("{0} -- {1}", edge.Value.Node1.Id, edge.Value.Node2.Id);
+                stream.WriteLine(output);
+            }
+        }
+
+        private void ExportNodesToGraphiv(StreamWriter stream, int scaleMultiplier, string presentingFormat)
+        {
+            foreach (var node in this.Nodes)
+            {
+                string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\"];",
+                    node.Key,
+                    (node.Value.Longitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture),
+                    (node.Value.Latitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture));
+                stream.WriteLine(output);
+            }
+        }
+
 
     }
 }
