@@ -1,22 +1,22 @@
 ﻿using OsmSharp.Streams;
 using System;
 using System.Collections.Generic;
+using System.Device.Location;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace OpenStreetMap
 {
     public class Map
     {
-        public Dictionary<long, Node> Nodes { get; set; }
-        private Dictionary<long, Node> TempNodes { get; set; }
-        public Dictionary<long, Edge> Edges { get; set; }
+
+
+        public List<Vertex> Vertices { get; set; }
 
         private Map()
         {
-            this.Nodes = new Dictionary<long, Node>();
-            this.Edges = new Dictionary<long, Edge>();
-            this.TempNodes = new Dictionary<long, Node>();
+            Vertices = new List<Vertex>();
         }
 
         private Map(string path) : this()
@@ -24,7 +24,7 @@ namespace OpenStreetMap
             using (var source = new FileInfo(path).OpenRead())
             {
                 Console.Write("Parsing File... ");
-                ParseFile(source);
+                LoadOSMFile(source);
                 Console.WriteLine("COMPLETE");
             }
         }
@@ -34,98 +34,91 @@ namespace OpenStreetMap
             return new Map(path);
         }
 
-        private void ParseFile(FileStream streamSource)
+        private void LoadOSMFile(Stream fileSource)
         {
-            var source = new XmlOsmStreamSource(streamSource);
+            var source = new XmlOsmStreamSource(fileSource);
             foreach (var element in source)
             {
                 if (element.Type == OsmSharp.OsmGeoType.Node)
                 {
-                    Node node = new Node((OsmSharp.Node)element);
-                    this.Nodes.Add(node.Id, node);
+                    Vertex vertex = new Vertex((OsmSharp.Node)element);
+                    Vertices.Add(vertex);
                 }
                 else if (element.Type == OsmSharp.OsmGeoType.Way)
                 {
                     string temp;
                     if (element.Tags != null && element.Tags.TryGetValue("highway", out temp))
                     {
-                        AddEdges(CreateEdgesFromWay((OsmSharp.Way)element));
+                        CreateEdges((OsmSharp.Way)element, Vertices);
                     }
                 }
             }
-            this.Nodes = this.TempNodes;
+            Vertices = tempVertices.Values.ToList();
         }
 
-        private List<Edge> CreateEdgesFromWay(OsmSharp.Way way)
+        static Dictionary<long, Vertex> tempVertices = new Dictionary<long, Vertex>();
+
+        private void CreateEdges(OsmSharp.Way element, List<Vertex> allVertices)
         {
-            List<Node> tempNodes = new List<Node>();
-            foreach (var nodeId in way.Nodes)
+            if (element.Nodes.Length > 1)
             {
-                Node node = Nodes[nodeId];
-                if (node == null)
+                for (int i = 0; i < element.Nodes.Length - 1; i++)
                 {
-                    throw new InvalidDataException("Node with Id: " + nodeId + " not found");
+                    Vertex v1 = allVertices.Find(x => x.id == element.Nodes[i]);
+                    Vertex v2 = allVertices.Find(x => x.id == element.Nodes[i + 1]);
+                    v1.adjacencies.Add(new Edge(v2, calculateDistance(v1, v2)));
+                    //v2.adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
+                    try
+                    {
+                        tempVertices.Add(v1.id, v1);
+                        tempVertices.Add(v2.id, v2);
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
-                tempNodes.Add(node);
-                try
-                {
-                    this.TempNodes.Add(node.Id, node);
-                }
-                catch (ArgumentException)
-                {
-                }
             }
-            List<Edge> tempEdges = new List<Edge>();
-            for (int i = 0; i < tempNodes.Count - 1; i++)
-            {
-                Node node1 = tempNodes[i];
-                Node node2 = tempNodes[i + 1];
-                tempEdges.Add(new Edge(way, node1, node2));
-            }
-            return tempEdges;
         }
 
-        private void AddEdges(List<Edge> edges)
+        static Func<Vertex, Vertex, double> calculateDistance = (v1, v2) =>
         {
-            foreach (var edge in edges)
-            {
-                this.Edges.Add(edge.Id, edge);
-            }
-        }
+            var sCoord = new GeoCoordinate(v1.lat, v1.lon);
+            var eCoord = new GeoCoordinate(v2.lat, v2.lon);
+            return Math.Abs(sCoord.GetDistanceTo(eCoord));
+        };
 
-        public void ExportToGraphiv(string path, int scaleMultiplier, string coordinatesPresentionFormat)
-        {
-            FileInfo fi = new FileInfo(path);
-            using (var stream = new StreamWriter(fi.Create()))
-            {
-                stream.WriteLine("graph{");
-                ExportNodesToGraphiv(stream, scaleMultiplier, coordinatesPresentionFormat);
-                ExportEdgesToGraphiv(stream);
-                stream.WriteLine("}");
-            }
-        }
+        //    public void ExportToGraphiv(string path, int scaleMultiplier, string coordinatesPresentionFormat)
+        //    {
+        //        FileInfo fi = new FileInfo(path);
+        //        using (var stream = new StreamWriter(fi.Create()))
+        //        {
+        //            stream.WriteLine("graph{");
+        //            ExportNodesToGraphiv(stream, scaleMultiplier, coordinatesPresentionFormat);
+        //            ExportEdgesToGraphiv(stream);
+        //            stream.WriteLine("}");
+        //        }
+        //    }
 
-        private void ExportEdgesToGraphiv(StreamWriter stream)
-        {
-            foreach (var edge in this.Edges)
-            {
-                string output = string.Format("{0} -- {1}", edge.Value.Node1.Id, edge.Value.Node2.Id);
-                stream.WriteLine(output);
-            }
-        }
+        //    private void ExportEdgesToGraphiv(StreamWriter stream)
+        //    {
+        //        foreach (var edge in this.Edges)
+        //        {
+        //            string output = string.Format("{0} -- {1}", edge.Value.Node1.Id, edge.Value.Node2.Id);
+        //            stream.WriteLine(output);
+        //        }
+        //    }
 
-        private void ExportNodesToGraphiv(StreamWriter stream, int scaleMultiplier, string presentingFormat)
-        {
-            foreach (var node in this.Nodes)
-            {
-                string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\"];",
-                    node.Key,
-                    (node.Value.Longitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture),
-                    (node.Value.Latitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture));
-                stream.WriteLine(output);
-            }
-        }
-
+        //    private void ExportNodesToGraphiv(StreamWriter stream, int scaleMultiplier, string presentingFormat)
+        //    {
+        //        foreach (var node in this.Nodes)
+        //        {
+        //            string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\"];",
+        //                node.Key,
+        //                (node.Value.Longitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture),
+        //                (node.Value.Latitude * scaleMultiplier).ToString(presentingFormat, CultureInfo.InvariantCulture));
+        //            stream.WriteLine(output);
+        //        }
+        //    }
 
     }
 }

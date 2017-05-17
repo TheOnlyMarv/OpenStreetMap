@@ -1,57 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Priority_Queue;
 
-namespace TestOSM
+using System.Device.Location;
+
+namespace OpenStreetMap
 {
-
-
-    class Vertex : IComparable<Vertex>
-    {
-        public long id;
-        public double minDistance = Double.PositiveInfinity;
-        public List<Edge> adjacencies;
-        public Vertex previous;
-        public float lat;
-        public float lon;
-
-        public Vertex(long id)
-        {
-            this.id = id;
-            adjacencies = new List<Edge>();
-        }
-        public Vertex(OsmSharp.Node node): this(node.Id ?? -1)
-        {
-            this.lat = node.Latitude ?? -1;
-            this.lon = node.Longitude ?? -1;
-        }
-        override public string ToString()
-        {
-            return id.ToString();
-        }
-
-        public int CompareTo(Vertex other)
-        {
-            return minDistance.CompareTo(other.minDistance);
-        }
-    }
-
-    class Edge
-    {
-        public Vertex target;
-        public double weight;
-        public Edge(Vertex target, double weight)
-        {
-            this.target = target;
-            this.weight = weight;
-        }
-    }
-
     class Dijkstra
     {
+        public static Vertex FindNearestNearestNode(float lat, float lon, List<Vertex> allVertices)
+        {
+            Func<Vertex, float, float, double> calculateDistance = (cnode, clat, clon) =>
+            {
+                var sCoord = new GeoCoordinate(clat, clon);
+                var eCoord = new GeoCoordinate(cnode.lat, cnode.lon);
+                return Math.Abs(sCoord.GetDistanceTo(eCoord));
+            };
+
+            Vertex nearestNode = allVertices.First();
+            double nearestNodeDistance = calculateDistance(nearestNode, lat, lon);
+
+            foreach (Vertex node in allVertices)
+            {
+                double distance = calculateDistance(node, lat, lon);
+                if (distance < nearestNodeDistance)
+                {
+                    nearestNode = node;
+                    nearestNodeDistance = distance;
+                }
+            }
+            return nearestNode;
+        }
+
         public static void ComputePaths(Vertex source)
         {
             source.minDistance = 0;
