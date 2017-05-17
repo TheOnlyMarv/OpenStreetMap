@@ -7,16 +7,26 @@ using Priority_Queue;
 
 namespace TestOSM
 {
+
+
     class Vertex : IComparable<Vertex>
     {
         public long id;
         public double minDistance = Double.PositiveInfinity;
         public List<Edge> adjacencies;
         public Vertex previous;
+        public float lat;
+        public float lon;
+
         public Vertex(long id)
         {
             this.id = id;
             adjacencies = new List<Edge>();
+        }
+        public Vertex(OsmSharp.Node node): this(node.Id ?? -1)
+        {
+            this.lat = node.Latitude ?? -1;
+            this.lon = node.Longitude ?? -1;
         }
         override public string ToString()
         {
