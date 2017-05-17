@@ -8,13 +8,15 @@ namespace OpenStreetMap
 {
     public class Map
     {
-        private Dictionary<long, Node> Nodes { get; set; }
+        public Dictionary<long, Node> Nodes { get; set; }
+        private Dictionary<long, Node> TempNodes { get; set; }
         public Dictionary<long, Edge> Edges { get; set; }
 
         private Map()
         {
             this.Nodes = new Dictionary<long, Node>();
             this.Edges = new Dictionary<long, Edge>();
+            this.TempNodes = new Dictionary<long, Node>();
         }
 
         private Map(string path) : this()
@@ -51,6 +53,7 @@ namespace OpenStreetMap
                     }
                 }
             }
+            this.Nodes = this.TempNodes;
         }
 
         private List<Edge> CreateEdgesFromWay(OsmSharp.Way way)
@@ -64,6 +67,13 @@ namespace OpenStreetMap
                     throw new InvalidDataException("Node with Id: " + nodeId + " not found");
                 }
                 tempNodes.Add(node);
+                try
+                {
+                    this.TempNodes.Add(node.Id, node);
+                }
+                catch (ArgumentException)
+                {
+                }
             }
             List<Edge> tempEdges = new List<Edge>();
             for (int i = 0; i < tempNodes.Count - 1; i++)

@@ -11,8 +11,9 @@ namespace OpenStreetMap
         public Node Node1 { get; set; }
         public Node Node2 { get; set; }
         public bool OneWay { get; set; }
-        public double Distance { get; set; }
+        public double Distance { get; private set; }
         public OsmSharp.Way OriginalWay { get; set; }
+        public double Cost { get; set; }
 
         public static long IdCounter = 0;
 
@@ -65,6 +66,15 @@ namespace OpenStreetMap
             var sCoord = new GeoCoordinate(this.Node1.Latitude, this.Node1.Longitude);
             var eCoord = new GeoCoordinate(this.Node2.Latitude, this.Node2.Longitude);
             this.Distance = sCoord.GetDistanceTo(eCoord);
+            this.Cost = this.Distance;
+
+            this.SetNeighborhoods();
+        }
+
+        private void SetNeighborhoods()
+        {
+            this.Node1.SetNeighbor(this.Node2);
+            this.Node2.SetNeighbor(this.Node1);
         }
     }
 }
