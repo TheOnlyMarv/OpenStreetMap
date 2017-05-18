@@ -61,13 +61,13 @@ namespace OpenStreetMap
 
         private static void ExportEdgesToGraphiv(StreamWriter stream, List<Vertex> allVertices, List<Vertex> path)
         {
-            Dictionary<string, Tuple<Vertex, Vertex>> prepare = new Dictionary<string, Tuple<Vertex, Vertex>>();
+            Dictionary<string, Tuple<Vertex, Vertex>> printed = new Dictionary<string, Tuple<Vertex, Vertex>>();
             for (int i = 0; i < path.Count - 1; i++)
             {
                 string s1 = path[i].Id.ToString() + path[i + 1].Id.ToString();
                 string s2 = path[i + 1].Id.ToString() + path[i].Id.ToString();
-                prepare.Add(s1, new Tuple<Vertex, Vertex>(path[i], path[i + 1]));
-                prepare.Add(s2, null);
+                printed.Add(s1, new Tuple<Vertex, Vertex>(path[i], path[i + 1]));
+                printed.Add(s2, null);
                 string output = string.Format("{0} -- {1} [color=\"red\"];", path[i].Id, path[i + 1].Id);
                 stream.WriteLine(output);
             }
@@ -80,10 +80,10 @@ namespace OpenStreetMap
                     string s2 = edge.Target.Id.ToString() + vertex.Id.ToString();
                     if (allVertices.FirstOrDefault(x => x.Id == vertex.Id) != null && allVertices.FirstOrDefault(x => x.Id == edge.Target.Id) != null)
                     {
-                        if (prepare.Keys.FirstOrDefault(x => x == s1) == null && prepare.Keys.FirstOrDefault(x => x == s2) == null)
+                        if (printed.Keys.FirstOrDefault(x => x == s1) == null && printed.Keys.FirstOrDefault(x => x == s2) == null)
                         {
-                            prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.Target));
-                            prepare.Add(s2, null);
+                            printed.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.Target));
+                            printed.Add(s2, null);
                             string output = string.Format("{0} -- {1};", vertex.Id, edge.Target.Id);
                             stream.WriteLine(output);
                         }
