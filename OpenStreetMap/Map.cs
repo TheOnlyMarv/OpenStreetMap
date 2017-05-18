@@ -53,10 +53,10 @@ namespace OpenStreetMap
                     }
                 }
             }
-            Vertices = tempVertices.Values.ToList();
+            Vertices = tempVertices.Distinct().ToList();
         }
 
-        static Dictionary<long, Vertex> tempVertices = new Dictionary<long, Vertex>();
+        static List<Vertex> tempVertices = new List<Vertex>();
 
         private void CreateEdges(OsmSharp.Way element, List<Vertex> allVertices)
         {
@@ -68,10 +68,11 @@ namespace OpenStreetMap
                     Vertex v2 = allVertices.Find(x => x.Id == element.Nodes[i + 1]);
                     v1.Adjacencies.Add(new Edge(v2, calculateDistance(v1, v2)));
                     v2.Adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
+
                     try
                     {
-                        tempVertices.Add(v1.Id, v1);
-                        tempVertices.Add(v2.Id, v2);
+                        tempVertices.Add(v1);
+                        tempVertices.Add(v2);
                     }
                     catch (Exception)
                     {

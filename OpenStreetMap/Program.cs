@@ -78,18 +78,17 @@ namespace OpenStreetMap
                 {
                     string s1 = vertex.Id.ToString() + edge.Target.Id.ToString();
                     string s2 = edge.Target.Id.ToString() + vertex.Id.ToString();
-                    try
+                    if (allVertices.FirstOrDefault(x => x.Id == vertex.Id) != null && allVertices.FirstOrDefault(x => x.Id == edge.Target.Id) != null)
                     {
-                        prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.Target));
-                        prepare.Add(s2, null);
-                        allVertices.First(x => x.Id == vertex.Id);
-                        allVertices.First(x => x.Id == edge.Target.Id);
-                        string output = string.Format("{0} -- {1};", vertex.Id, edge.Target.Id);
-                        stream.WriteLine(output);
+                        if (prepare.Keys.FirstOrDefault(x => x == s1) == null && prepare.Keys.FirstOrDefault(x => x == s2) == null)
+                        {
+                            prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.Target));
+                            prepare.Add(s2, null);
+                            string output = string.Format("{0} -- {1};", vertex.Id, edge.Target.Id);
+                            stream.WriteLine(output);
+                        }
                     }
-                    catch (Exception)
-                    {
-                    }
+
                 }
             }
         }
