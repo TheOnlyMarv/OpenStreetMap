@@ -67,7 +67,7 @@ namespace OpenStreetMap
                     Vertex v1 = allVertices.Find(x => x.id == element.Nodes[i]);
                     Vertex v2 = allVertices.Find(x => x.id == element.Nodes[i + 1]);
                     v1.adjacencies.Add(new Edge(v2, calculateDistance(v1, v2)));
-                    //v2.adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
+                    v2.adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
                     try
                     {
                         tempVertices.Add(v1.id, v1);

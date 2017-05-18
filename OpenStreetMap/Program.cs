@@ -13,11 +13,6 @@ namespace OpenStreetMap
     {
         static void Main(string[] args)
         {
-            //Map map = Map.MapLoader(args[0]);
-            //map.ExportToGraphiv(args[1], 1000, "0.000000");
-
-            //Dijkstra dijkstra = new Dijkstra(map, float.Parse(args[2]), float.Parse(args[3]), float.Parse(args[4]), float.Parse(args[5]));
-            //var result = dijkstra.GetPath();
             TestSomeDiffrentStuff(args);
             Console.ReadLine();
         }
@@ -36,33 +31,55 @@ namespace OpenStreetMap
             Console.Write("Path: ");
             foreach (var vertex in path)
             {
-                Console.Write(vertex + ", ");
+                Console.Write(vertex + " ");
             }
-            ExportToGraphiv(args[1], 1000, "0.000000", A, Z, allVertices);
+            ExportToGraphiv(args[1], 1000, "0.000000", A, Z, allVertices, path);
         }
 
-        private static void ExportToGraphiv(string path, int scaleMultiplier, string formatString, Vertex start, Vertex end, List<Vertex> allVertices)
+        private static void ExportToGraphiv(string filepath, int scaleMultiplier, string formatString, Vertex start, Vertex end, List<Vertex> allVertices, List<Vertex> path)
         {
-            FileInfo fi = new FileInfo(path);
+            FileInfo fi = new FileInfo(filepath);
             using (var stream = new StreamWriter(fi.Create()))
             {
                 stream.WriteLine("graph{");
                 ExportNodesToGraphiv(stream, scaleMultiplier, formatString, start, end, allVertices);
-                ExportEdgesToGraphiv(stream, allVertices);
+                ExportEdgesToGraphiv(stream, allVertices, path);
                 stream.WriteLine("}");
             }
         }
 
-        private static void ExportEdgesToGraphiv(StreamWriter stream, List<Vertex> allVertices)
+        private static void ExportEdgesToGraphiv(StreamWriter stream, List<Vertex> allVertices, List<Vertex> path)
         {
+            Dictionary<string, Tuple<Vertex, Vertex>> prepare = new Dictionary<string, Tuple<Vertex, Vertex>>();
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                string s1 = path[i].id.ToString() + path[i + 1].id.ToString();
+                string s2 = path[i + 1].id.ToString() + path[i].id.ToString();
+                prepare.Add(s1, new Tuple<Vertex, Vertex>(path[i], path[i + 1]));
+                prepare.Add(s2, null);
+                string output = string.Format("{0} -- {1} [color=\"red\"];", path[i].id, path[i + 1].id);
+                stream.WriteLine(output);
+            }
+
             foreach (var vertex in allVertices)
             {
                 foreach (var edge in vertex.adjacencies)
                 {
-                    string output = string.Format("{0} -- {1}", vertex.id, edge.target.id);
-                    stream.WriteLine(output);
+                    string s1 = vertex.id.ToString() + edge.target.id.ToString();
+                    string s2 = edge.target.id.ToString() + vertex.id.ToString();
+                    try
+                    {
+                        prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.target));
+                        prepare.Add(s2, null);
+                        allVertices.First(x => x.id == vertex.id);
+                        allVertices.First(x => x.id == edge.target.id);
+                        string output = string.Format("{0} -- {1};", vertex.id, edge.target.id);
+                        stream.WriteLine(output);
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
-
             }
         }
 
@@ -70,10 +87,13 @@ namespace OpenStreetMap
         {
             foreach (var node in allVertices)
             {
-                string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\"];",//, shape=\"point\"
+                bool mark = node == start || node == end;
+                string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\" {3}];",
                     node.id,
                     (node.lon * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
-                    (node.lat * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture));
+                    (node.lat * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
+                    mark ? "color=\"red\"" : ""
+                    );
                 stream.WriteLine(output);
             }
         }
