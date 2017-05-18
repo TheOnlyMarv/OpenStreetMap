@@ -4,12 +4,12 @@ namespace OpenStreetMap
 {
     public class Edge
     {
-        public Vertex target;
-        public double weight;
+        public Vertex Target;
+        public double Weight;
         public Edge(Vertex target, double weight)
         {
-            this.target = target;
-            this.weight = weight;
+            this.Target = target;
+            this.Weight = weight;
         }
     }
 }

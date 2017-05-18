@@ -9,31 +9,31 @@ namespace OpenStreetMap
 {
     public class Vertex : IComparable<Vertex>
     {
-        public long id;
-        public double minDistance = Double.PositiveInfinity;
-        public List<Edge> adjacencies;
-        public Vertex previous;
-        public double lat;
-        public double lon;
+        public long Id;
+        public double MinDistance = Double.PositiveInfinity;
+        public List<Edge> Adjacencies;
+        public Vertex Previous;
+        public double Latitude;
+        public double Longitude;
 
         public Vertex(long id)
         {
-            this.id = id;
-            adjacencies = new List<Edge>();
+            this.Id = id;
+            Adjacencies = new List<Edge>();
         }
         public Vertex(OsmSharp.Node node) : this(node.Id ?? -1)
         {
-            this.lat = node.Latitude ?? -1;
-            this.lon = node.Longitude ?? -1;
+            this.Latitude = node.Latitude ?? -1;
+            this.Longitude = node.Longitude ?? -1;
         }
         override public string ToString()
         {
-            return id.ToString();
+            return Id.ToString();
         }
 
         public int CompareTo(Vertex other)
         {
-            return minDistance.CompareTo(other.minDistance);
+            return MinDistance.CompareTo(other.MinDistance);
         }
     }
 }

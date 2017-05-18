@@ -6,14 +6,14 @@ using System.Device.Location;
 
 namespace OpenStreetMap
 {
-    class Dijkstra
+    public class Dijkstra
     {
         public static Vertex FindNearestNearestNode(float lat, float lon, List<Vertex> allVertices)
         {
             Func<Vertex, float, float, double> calculateDistance = (cnode, clat, clon) =>
             {
                 var sCoord = new GeoCoordinate(clat, clon);
-                var eCoord = new GeoCoordinate(cnode.lat, cnode.lon);
+                var eCoord = new GeoCoordinate(cnode.Latitude, cnode.Longitude);
                 return Math.Abs(sCoord.GetDistanceTo(eCoord));
             };
 
@@ -34,7 +34,7 @@ namespace OpenStreetMap
 
         public static void ComputePaths(Vertex source)
         {
-            source.minDistance = 0;
+            source.MinDistance = 0;
             SortedSet<Vertex> vertexQueue = new SortedSet<Vertex>();
             vertexQueue.Add(source);
 
@@ -43,17 +43,17 @@ namespace OpenStreetMap
                 Vertex u = vertexQueue.First();
                 vertexQueue.Remove(u);
 
-                foreach (Edge e in u.adjacencies)
+                foreach (Edge e in u.Adjacencies)
                 {
-                    Vertex v = e.target;
-                    double weigth = e.weight;
-                    double distanceThroughU = u.minDistance + weigth;
-                    if (distanceThroughU < v.minDistance)
+                    Vertex v = e.Target;
+                    double weigth = e.Weight;
+                    double distanceThroughU = u.MinDistance + weigth;
+                    if (distanceThroughU < v.MinDistance)
                     {
                         vertexQueue.Remove(v);
 
-                        v.minDistance = distanceThroughU;
-                        v.previous = u;
+                        v.MinDistance = distanceThroughU;
+                        v.Previous = u;
                         vertexQueue.Add(v);
                     }
                 }
@@ -63,7 +63,7 @@ namespace OpenStreetMap
         public static List<Vertex> GetShortestPathTo(Vertex target)
         {
             List<Vertex> path = new List<Vertex>();
-            for (Vertex vertex = target; vertex != null; vertex = vertex.previous)
+            for (Vertex vertex = target; vertex != null; vertex = vertex.Previous)
             {
                 path.Add(vertex);
             }

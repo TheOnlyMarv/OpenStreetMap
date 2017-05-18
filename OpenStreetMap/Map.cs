@@ -64,14 +64,14 @@ namespace OpenStreetMap
             {
                 for (int i = 0; i < element.Nodes.Length - 1; i++)
                 {
-                    Vertex v1 = allVertices.Find(x => x.id == element.Nodes[i]);
-                    Vertex v2 = allVertices.Find(x => x.id == element.Nodes[i + 1]);
-                    v1.adjacencies.Add(new Edge(v2, calculateDistance(v1, v2)));
-                    v2.adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
+                    Vertex v1 = allVertices.Find(x => x.Id == element.Nodes[i]);
+                    Vertex v2 = allVertices.Find(x => x.Id == element.Nodes[i + 1]);
+                    v1.Adjacencies.Add(new Edge(v2, calculateDistance(v1, v2)));
+                    v2.Adjacencies.Add(new Edge(v1, calculateDistance(v2, v1))); //evtl problematisch => loop
                     try
                     {
-                        tempVertices.Add(v1.id, v1);
-                        tempVertices.Add(v2.id, v2);
+                        tempVertices.Add(v1.Id, v1);
+                        tempVertices.Add(v2.Id, v2);
                     }
                     catch (Exception)
                     {
@@ -82,8 +82,8 @@ namespace OpenStreetMap
 
         static Func<Vertex, Vertex, double> calculateDistance = (v1, v2) =>
         {
-            var sCoord = new GeoCoordinate(v1.lat, v1.lon);
-            var eCoord = new GeoCoordinate(v2.lat, v2.lon);
+            var sCoord = new GeoCoordinate(v1.Latitude, v1.Longitude);
+            var eCoord = new GeoCoordinate(v2.Latitude, v2.Longitude);
             return Math.Abs(sCoord.GetDistanceTo(eCoord));
         };
 

@@ -13,27 +13,38 @@ namespace OpenStreetMap
     {
         static void Main(string[] args)
         {
-            TestSomeDiffrentStuff(args);
+            ComputeEverything(args[0], args[1], float.Parse(args[2]), float.Parse(args[3]), float.Parse(args[4]), float.Parse(args[5]));
+            Console.WriteLine("--- Everything is done ---");
             Console.ReadLine();
         }
 
-        private static void TestSomeDiffrentStuff(string[] args)
+        private static void ComputeEverything(string source, string destination, float startLat, float startLon, float endLat, float endLon)
         {
-            Map map = Map.MapLoader(args[0]);
+            Map map = Map.MapLoader(source);
             List<Vertex> allVertices = map.Vertices;
 
-            Vertex A = Dijkstra.FindNearestNearestNode(float.Parse(args[2]), float.Parse(args[3]), allVertices);
-            Vertex Z = Dijkstra.FindNearestNearestNode(float.Parse(args[4]), float.Parse(args[5]), allVertices);
+            Console.Write("Find nearest nodes (start, end)... ");
+            Vertex A = Dijkstra.FindNearestNearestNode(startLat, startLon, allVertices);
+            Vertex Z = Dijkstra.FindNearestNearestNode(endLat, endLon, allVertices);
+            Console.WriteLine("COMPLETE");
 
+            Console.Write("Calculate shortest path... ");
             Dijkstra.ComputePaths(A);
-            Console.WriteLine("Distance to " + Z + ": " + Z.minDistance);
+            Console.WriteLine("COMPLETE");
+
+            Console.WriteLine("\n--- INFORMATION START ---");
+            Console.WriteLine("Distance to " + Z + ": " + Z.MinDistance + " meter");
             List<Vertex> path = Dijkstra.GetShortestPathTo(Z);
             Console.Write("Path: ");
             foreach (var vertex in path)
             {
                 Console.Write(vertex + " ");
             }
-            ExportToGraphiv(args[1], 1000, "0.000000", A, Z, allVertices, path);
+            Console.WriteLine("\n--- INFORMATION END ---\n");
+
+            Console.Write("Export to Graphiv... ");
+            ExportToGraphiv(destination, 1000, "0.000000", A, Z, allVertices, path);
+            Console.WriteLine("COMPLETE");
         }
 
         private static void ExportToGraphiv(string filepath, int scaleMultiplier, string formatString, Vertex start, Vertex end, List<Vertex> allVertices, List<Vertex> path)
@@ -53,27 +64,27 @@ namespace OpenStreetMap
             Dictionary<string, Tuple<Vertex, Vertex>> prepare = new Dictionary<string, Tuple<Vertex, Vertex>>();
             for (int i = 0; i < path.Count - 1; i++)
             {
-                string s1 = path[i].id.ToString() + path[i + 1].id.ToString();
-                string s2 = path[i + 1].id.ToString() + path[i].id.ToString();
+                string s1 = path[i].Id.ToString() + path[i + 1].Id.ToString();
+                string s2 = path[i + 1].Id.ToString() + path[i].Id.ToString();
                 prepare.Add(s1, new Tuple<Vertex, Vertex>(path[i], path[i + 1]));
                 prepare.Add(s2, null);
-                string output = string.Format("{0} -- {1} [color=\"red\"];", path[i].id, path[i + 1].id);
+                string output = string.Format("{0} -- {1} [color=\"red\"];", path[i].Id, path[i + 1].Id);
                 stream.WriteLine(output);
             }
 
             foreach (var vertex in allVertices)
             {
-                foreach (var edge in vertex.adjacencies)
+                foreach (var edge in vertex.Adjacencies)
                 {
-                    string s1 = vertex.id.ToString() + edge.target.id.ToString();
-                    string s2 = edge.target.id.ToString() + vertex.id.ToString();
+                    string s1 = vertex.Id.ToString() + edge.Target.Id.ToString();
+                    string s2 = edge.Target.Id.ToString() + vertex.Id.ToString();
                     try
                     {
-                        prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.target));
+                        prepare.Add(s1, new Tuple<Vertex, Vertex>(vertex, edge.Target));
                         prepare.Add(s2, null);
-                        allVertices.First(x => x.id == vertex.id);
-                        allVertices.First(x => x.id == edge.target.id);
-                        string output = string.Format("{0} -- {1};", vertex.id, edge.target.id);
+                        allVertices.First(x => x.Id == vertex.Id);
+                        allVertices.First(x => x.Id == edge.Target.Id);
+                        string output = string.Format("{0} -- {1};", vertex.Id, edge.Target.Id);
                         stream.WriteLine(output);
                     }
                     catch (Exception)
@@ -89,9 +100,9 @@ namespace OpenStreetMap
             {
                 bool mark = node == start || node == end;
                 string output = string.Format("{0} [pos=\"{1}, {2}!\", shape=\"point\" {3}];",
-                    node.id,
-                    (node.lon * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
-                    (node.lat * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
+                    node.Id,
+                    (node.Longitude * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
+                    (node.Latitude * scaleMultiplier).ToString(formatString, CultureInfo.InvariantCulture),
                     mark ? "color=\"red\"" : ""
                     );
                 stream.WriteLine(output);
